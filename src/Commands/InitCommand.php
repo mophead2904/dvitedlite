@@ -1,5 +1,6 @@
+<?php
 
-<?php namespace DrupalProject\composer\Commands;
+namespace DrupalProject\composer\Commands;
 
 use Composer\Command\BaseCommand;
 use Symfony\Component\Console\Input\InputArgument;
