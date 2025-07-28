@@ -8,7 +8,7 @@ use Composer\IO\IOInterface;
 use Composer\Plugin\PluginInterface;
 use Composer\Script\ScriptEvents;
 
-class SimpleComposerPlugin implements PluginInterface, EventSubscriberInterface
+class ComposerPlugin implements PluginInterface, EventSubscriberInterface
 {
   public function activate(Composer $composer, IOInterface $io) {}
   public function deactivate(Composer $composer, IOInterface $io) {}
