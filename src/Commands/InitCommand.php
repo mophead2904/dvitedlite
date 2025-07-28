@@ -61,11 +61,20 @@ class InitCommand extends BaseCommand
     // 5. Create basic theme files
     $this->createThemeFiles($fs, $themeDir, $themeName, $themeMachineName, $output);
 
+    // 6. Enable settings.local.php in settings.php
+    $this->enableSettingsLocal($fs, $drupalRoot, $output);
+
+    // 7. Update DDEV config
+    $this->updateDdevConfig($fs, $drupalRoot, $output);
+
+    // 8. Restart DDEV if available
+    $this->restartDdev($output);
+
     $output->writeln("<success>✅ Vite theme '{$themeName}' initialized successfully!</success>");
     $output->writeln("<comment>Next steps:</comment>");
     $output->writeln("1. cd {$themeDir}");
-    $output->writeln("2. npm install");
-    $output->writeln("3. npm run dev");
+    $output->writeln("2. pnpm install");
+    $output->writeln("3. pnpm build");
 
     return 0;
   }
@@ -177,5 +186,106 @@ class InitCommand extends BaseCommand
 
     $fs->dumpFile($themeDir . "/{$themeMachineName}.theme", $themeFile);
     $output->writeln("✓ Created {$themeMachineName}.theme");
+  }
+
+  private function enableSettingsLocal($fs, $drupalRoot, $output)
+  {
+    $settingsPath = $drupalRoot . "/sites/default/settings.php";
+
+    if (!$fs->exists($settingsPath)) {
+      $output->writeln("<comment>⚠ settings.php not found, skipping settings.local.php enablement</comment>");
+      return;
+    }
+
+    $content = file_get_contents($settingsPath);
+
+    // Check if settings.local.php include is already uncommented
+    if (preg_match('/^\s*if\s*\(\s*file_exists\s*\(\s*\$app_root\s*\.\s*\'\/\'\s*\.\s*\$site_path\s*\.\s*\'\/settings\.local\.php\'\s*\)\s*\)\s*\{/m', $content)) {
+      $output->writeln("✓ settings.local.php include already enabled in settings.php");
+      return;
+    }
+
+    // Look for the commented version and uncomment it
+    $pattern = '/^#\s*(if\s*\(\s*file_exists\s*\(\s*\$app_root\s*\.\s*\'\/\'\s*\.\s*\$site_path\s*\.\s*\'\/settings\.local\.php\'\s*\)\s*\)\s*\{)\s*\n#\s*(include\s+\$app_root\s*\.\s*\'\/\'\s*\.\s*\$site_path\s*\.\s*\'\/settings\.local\.php\';)\s*\n#\s*(\})/m';
+
+    if (preg_match($pattern, $content)) {
+      $replacement = '$1' . "\n" . '  $2' . "\n" . '$3';
+      $content = preg_replace($pattern, $replacement, $content);
+
+      $fs->dumpFile($settingsPath, $content);
+      $output->writeln("✓ Uncommented settings.local.php include in settings.php");
+    } else {
+      // If the commented version isn't found, add it at the end
+      $settingsLocalCode = "\n" . "// Include local settings if available." . "\n" . 'if (file_exists($app_root . \'/\' . $site_path . \'/settings.local.php\')) {' . "\n" . '  include $app_root . \'/\' . $site_path . \'/settings.local.php\';' . "\n" . "}" . "\n";
+
+      $content .= $settingsLocalCode;
+      $fs->dumpFile($settingsPath, $content);
+      $output->writeln("✓ Added settings.local.php include to settings.php");
+    }
+  }
+
+  private function updateDdevConfig($fs, $drupalRoot, $output)
+  {
+    // Go up one level from Drupal root to find .ddev directory
+    $projectRoot = dirname($drupalRoot);
+    $ddevConfigPath = $projectRoot . "/.ddev/config.yaml";
+
+    if (!$fs->exists($ddevConfigPath)) {
+      $output->writeln("<comment>⚠ .ddev/config.yaml not found, skipping DDEV config update</comment>");
+      return;
+    }
+
+    $content = file_get_contents($ddevConfigPath);
+
+    // Check if disable_settings_management is already set to true
+    if (preg_match('/^disable_settings_management:\s*true\s*$/m', $content)) {
+      $output->writeln("✓ disable_settings_management already set to true in .ddev/config.yaml");
+      return;
+    }
+
+    // Check if disable_settings_management exists but is set to false
+    if (preg_match('/^disable_settings_management:\s*false\s*$/m', $content)) {
+      $content = preg_replace('/^disable_settings_management:\s*false\s*$/m', "disable_settings_management: true", $content);
+      $fs->dumpFile($ddevConfigPath, $content);
+      $output->writeln("✓ Updated disable_settings_management to true in .ddev/config.yaml");
+      return;
+    }
+
+    // If disable_settings_management doesn't exist, add it
+    // Try to add it after the name field for better organization
+    if (preg_match('/^name:\s*.*$/m', $content)) {
+      $content = preg_replace('/^(name:\s*.*\n)/m', '$1disable_settings_management: true' . "\n", $content);
+    } else {
+      // If no name field found, add at the beginning
+      $content = "disable_settings_management: true\n" . $content;
+    }
+
+    $fs->dumpFile($ddevConfigPath, $content);
+    $output->writeln("✓ Added disable_settings_management: true to .ddev/config.yaml");
+  }
+
+  private function restartDdev($output)
+  {
+    // Check if ddev command is available
+    $ddevAvailable = shell_exec("which ddev 2>/dev/null");
+
+    if (empty(trim($ddevAvailable))) {
+      $output->writeln("<comment>⚠ DDEV command not found, skipping restart</comment>");
+      return;
+    }
+
+    $output->writeln("<info>🔄 Restarting DDEV to apply config changes...</info>");
+
+    // Execute ddev restart
+    $result = shell_exec("ddev restart 2>&1");
+    $exitCode = shell_exec('echo $?');
+
+    if (trim($exitCode) === "0") {
+      $output->writeln("✅ DDEV restarted successfully");
+    } else {
+      $output->writeln("<error>❌ DDEV restart failed:</error>");
+      $output->writeln($result);
+      $output->writeln("<comment>You may need to run 'ddev restart' manually</comment>");
+    }
   }
 }

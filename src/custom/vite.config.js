@@ -1,5 +1,4 @@
 import { defineConfig } from "vite"
-import vue from "@vitejs/plugin-vue"
 import path from "path"
 import { glob } from "glob"
 
@@ -56,10 +55,8 @@ function getCSSEntries() {
 }
 
 export default defineConfig({
-  base: isProduction ? "/themes/custom/cga/dist/" : "",
 
   plugins: [
-    vue(),
     // Custom plugin to trigger Drupal cache clear on template changes
     {
       name: "drupal-template-watcher",
@@ -92,11 +89,9 @@ export default defineConfig({
           },
         }),
         postcssGlobalData({
-          files: ["./src/css/custom-media.css"],
+          files: ["./src/css/utility.css"],
         }),
         require("postcss-custom-media")(),
-        require("tailwindcss/nesting"),
-        require("tailwindcss"),
         require("postcss-nesting"),
         require("postcss-preset-env")({
           stage: 3,
@@ -114,14 +109,6 @@ export default defineConfig({
       css: {
         charset: false,
       },
-    },
-  },
-
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src/vue-app"),
-      "@css": path.resolve(__dirname, "./src/css"),
-      vue: "vue/dist/vue.esm-bundler.js",
     },
   },
 
@@ -143,7 +130,6 @@ export default defineConfig({
         chunkFileNames: "js/chunks/[name]-[hash].js",
         assetFileNames: (assetInfo) => {
           const assetName = assetInfo.name || ""
-          console.log(assetName)
           if (assetName.endsWith(".css")) {
             const justTheFileName = path.basename(assetName)
             return `css/${justTheFileName}`
@@ -186,7 +172,6 @@ export default defineConfig({
 
   // Optimize dependency pre-bundling
   optimizeDeps: {
-    include: ["vue"],
     exclude: ["@vite/client", "@vite/env"],
   },
 
