@@ -74,7 +74,8 @@ class InitCommand extends BaseCommand
     $output->writeln("<comment>Next steps:</comment>");
     $output->writeln("1. cd {$themeDir}");
     $output->writeln("2. pnpm install");
-    $output->writeln("3. pnpm build");
+    $output->writeln("3. pnpm build to make initial manifest file");
+    $output->writeln("4. pnpm dev to start development server");
 
     return 0;
   }
