@@ -11,7 +11,6 @@ use Composer\Script\Event;
 use Composer\Semver\Comparator;
 use DrupalFinder\DrupalFinder;
 use Symfony\Component\Filesystem\Filesystem;
-use Webmozart\PathUtil\Path;
 
 class ScriptHandler
 {
@@ -22,53 +21,123 @@ class ScriptHandler
     $drupalFinder->locateRoot(getcwd());
     $drupalRoot = $drupalFinder->getDrupalRoot();
 
+    $event->getIO()->write("=== SPEEDSTER DEBUG START ===");
+    $event->getIO()->write("Current working directory: " . getcwd());
+    $event->getIO()->write("Drupal root found at: " . $drupalRoot);
+
     // Get the path to this package's files
     $vendorDir = $event->getComposer()->getConfig()->get("vendor-dir");
     $packageDir = $vendorDir . "/mophead2904/speedster";
+
+    $event->getIO()->write("Vendor directory: " . $vendorDir);
+    $event->getIO()->write("Package directory: " . $packageDir);
+    $event->getIO()->write("Package directory exists: " . ($fs->exists($packageDir) ? "YES" : "NO"));
+
+    if ($fs->exists($packageDir)) {
+      $event->getIO()->write("Contents of package directory:");
+      $contents = scandir($packageDir);
+      foreach ($contents as $item) {
+        if ($item !== "." && $item !== "..") {
+          $event->getIO()->write("  - " . $item);
+        }
+      }
+
+      $customDir = $packageDir . "/src/custom";
+      $event->getIO()->write("Custom directory: " . $customDir);
+      $event->getIO()->write("Custom directory exists: " . ($fs->exists($customDir) ? "YES" : "NO"));
+
+      if ($fs->exists($customDir)) {
+        $event->getIO()->write("Contents of custom directory:");
+        $customContents = scandir($customDir);
+        foreach ($customContents as $item) {
+          if ($item !== "." && $item !== "..") {
+            $event->getIO()->write("  - " . $item);
+          }
+        }
+      }
+    }
 
     $dirs = ["modules", "profiles", "themes"];
 
     // Required for unit testing
     foreach ($dirs as $dir) {
-      if (!$fs->exists($drupalRoot . "/" . $dir)) {
-        $fs->mkdir($drupalRoot . "/" . $dir);
-        $fs->touch($drupalRoot . "/" . $dir . "/.gitkeep");
+      $dirPath = $drupalRoot . "/" . $dir;
+      $event->getIO()->write("Checking directory: " . $dirPath);
+      if (!$fs->exists($dirPath)) {
+        $fs->mkdir($dirPath);
+        $fs->touch($dirPath . "/.gitkeep");
+        $event->getIO()->write("✓ Created directory: " . $dirPath);
+      } else {
+        $event->getIO()->write("✓ Directory already exists: " . $dirPath);
       }
     }
 
     // Copy settings.php from package (if it exists and destination doesn't)
     $sourceSettings = $packageDir . "/src/custom/settings.php";
     $destSettings = $drupalRoot . "/sites/default/settings.php";
+    $event->getIO()->write("--- SETTINGS.PHP ---");
+    $event->getIO()->write("Source: " . $sourceSettings);
+    $event->getIO()->write("Destination: " . $destSettings);
+    $event->getIO()->write("Source exists: " . ($fs->exists($sourceSettings) ? "YES" : "NO"));
+    $event->getIO()->write("Destination exists: " . ($fs->exists($destSettings) ? "YES" : "NO"));
+
     if (!$fs->exists($destSettings) && $fs->exists($sourceSettings)) {
       $fs->copy($sourceSettings, $destSettings);
       $fs->chmod($destSettings, 0666);
-      $event->getIO()->write("Created a sites/default/settings.php file with chmod 0666");
+      $event->getIO()->write("✓ Created a sites/default/settings.php file with chmod 0666");
+    } else {
+      $event->getIO()->write("⚠ Skipped settings.php (destination exists or source missing)");
     }
 
     // Copy settings.local.php from package
     $sourceSettingsLocal = $packageDir . "/src/custom/settings.local.php";
     $destSettingsLocal = $drupalRoot . "/sites/default/settings.local.php";
+    $event->getIO()->write("--- SETTINGS.LOCAL.PHP ---");
+    $event->getIO()->write("Source: " . $sourceSettingsLocal);
+    $event->getIO()->write("Destination: " . $destSettingsLocal);
+    $event->getIO()->write("Source exists: " . ($fs->exists($sourceSettingsLocal) ? "YES" : "NO"));
+    $event->getIO()->write("Destination exists: " . ($fs->exists($destSettingsLocal) ? "YES" : "NO"));
+
     if (!$fs->exists($destSettingsLocal) && $fs->exists($sourceSettingsLocal)) {
       $fs->copy($sourceSettingsLocal, $destSettingsLocal);
       $fs->chmod($destSettingsLocal, 0666);
-      $event->getIO()->write("Created a sites/default/settings.local.php file with chmod 0666");
+      $event->getIO()->write("✓ Created a sites/default/settings.local.php file with chmod 0666");
+    } else {
+      $event->getIO()->write("⚠ Skipped settings.local.php (destination exists or source missing)");
     }
 
     // Copy local.services.yml from package
     $sourceServices = $packageDir . "/src/custom/local.services.yml";
     $destServices = $drupalRoot . "/sites/local.services.yml";
+    $event->getIO()->write("--- LOCAL.SERVICES.YML ---");
+    $event->getIO()->write("Source: " . $sourceServices);
+    $event->getIO()->write("Destination: " . $destServices);
+    $event->getIO()->write("Source exists: " . ($fs->exists($sourceServices) ? "YES" : "NO"));
+    $event->getIO()->write("Destination exists: " . ($fs->exists($destServices) ? "YES" : "NO"));
+
     if (!$fs->exists($destServices) && $fs->exists($sourceServices)) {
       $fs->copy($sourceServices, $destServices);
-      $event->getIO()->write("Created a sites/local.services.yml file");
+      $event->getIO()->write("✓ Created a sites/local.services.yml file");
+    } else {
+      $event->getIO()->write("⚠ Skipped local.services.yml (destination exists or source missing)");
     }
 
     // Create the files directory with chmod 0777
-    if (!$fs->exists($drupalRoot . "/sites/default/files")) {
+    $filesDir = $drupalRoot . "/sites/default/files";
+    $event->getIO()->write("--- FILES DIRECTORY ---");
+    $event->getIO()->write("Files directory: " . $filesDir);
+    $event->getIO()->write("Files directory exists: " . ($fs->exists($filesDir) ? "YES" : "NO"));
+
+    if (!$fs->exists($filesDir)) {
       $oldmask = umask(0);
-      $fs->mkdir($drupalRoot . "/sites/default/files", 0777);
+      $fs->mkdir($filesDir, 0777);
       umask($oldmask);
-      $event->getIO()->write("Created a sites/default/files directory with chmod 0777");
+      $event->getIO()->write("✓ Created a sites/default/files directory with chmod 0777");
+    } else {
+      $event->getIO()->write("✓ Files directory already exists");
     }
+
+    $event->getIO()->write("=== SPEEDSTER DEBUG END ===");
   }
 
   /**
