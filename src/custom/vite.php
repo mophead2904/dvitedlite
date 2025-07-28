@@ -5,9 +5,9 @@ use Drupal\Core\Site\Settings;
 /**
  * Implements hook_library_info_alter().
  */
-function cga_library_info_alter(&$libraries, $extension)
+function THEME_NAME_library_info_alter(&$libraries, $extension)
 {
-  if ($extension !== "cga") {
+  if ($extension !== "THEME_NAME") {
     return;
   }
 
@@ -178,7 +178,7 @@ function _get_individual_css_files(): array
 /**
  * Implements hook_preprocess_html().
  */
-function cga_preprocess_html(&$variables)
+function THEME_NAME_preprocess_html(&$variables)
 {
   $variables["#attached"]["drupalSettings"]["path"]["themeUrl"] = \Drupal::theme()->getActiveTheme()->getPath();
 }

@@ -67,15 +67,13 @@ class InitCommand extends BaseCommand
     // 7. Update DDEV config
     $this->updateDdevConfig($fs, $drupalRoot, $output);
 
-    // 8. Restart DDEV if available
-    $this->restartDdev($output);
-
     $output->writeln("<success>✅ Vite theme '{$themeName}' initialized successfully!</success>");
     $output->writeln("<comment>Next steps:</comment>");
-    $output->writeln("1. cd {$themeDir}");
-    $output->writeln("2. pnpm install");
-    $output->writeln("3. pnpm build to make initial manifest file");
-    $output->writeln("4. pnpm dev to start development server");
+    $output->writeln("1. ddev restart");
+    $output->writeln("2. cd {$themeDir}");
+    $output->writeln("3. pnpm install");
+    $output->writeln("4. pnpm build to make initial manifest file");
+    $output->writeln("5. pnpm dev to start development server");
 
     return 0;
   }
@@ -88,8 +86,8 @@ class InitCommand extends BaseCommand
     if ($fs->exists($sourceFile)) {
       // Read the source file and replace the theme name placeholder
       $content = file_get_contents($sourceFile);
-      $content = str_replace("cga", $themeMachineName, $content);
-      $content = str_replace("/themes/custom/cga/", "/themes/custom/{$themeMachineName}/", $content);
+      $content = str_replace("THEME_NAME", $themeMachineName, $content);
+      $content = str_replace("/themes/custom/THEME_NAME/", "/themes/custom/{$themeMachineName}/", $content);
 
       $fs->dumpFile($destFile, $content);
       $output->writeln("✓ Created vite.config.js");
@@ -111,7 +109,7 @@ class InitCommand extends BaseCommand
     if ($fs->exists($sourceFile)) {
       // Read the source file and replace the theme name placeholder
       $content = file_get_contents($sourceFile);
-      $content = str_replace("cga", $themeMachineName, $content);
+      $content = str_replace("THEME_NAME", $themeMachineName, $content);
 
       $fs->dumpFile($destFile, $content);
       $output->writeln("✓ Created includes/vite.php");
@@ -169,10 +167,11 @@ class InitCommand extends BaseCommand
   {
     // Create src directories
     $srcDir = $themeDir . "/src";
-    $cssDir = $srcDir . "/css";
-    $jsDir = $srcDir . "/js";
+    $cssMain = $srcDir . "/css/main.css";
+    $cssUtil = $srcDir . "/css/utilities.css";
+    $jsDir = $srcDir . "/js/main.js";
 
-    $fs->mkdir([$cssDir, $jsDir]);
+    $fs->mkdir([$cssMain, $cssUtil, $jsDir]);
     $output->writeln("✓ Created src/css/ directory");
     $output->writeln("✓ Created src/js/ directory");
   }
@@ -263,30 +262,5 @@ class InitCommand extends BaseCommand
 
     $fs->dumpFile($ddevConfigPath, $content);
     $output->writeln("✓ Added disable_settings_management: true to .ddev/config.yaml");
-  }
-
-  private function restartDdev($output)
-  {
-    // Check if ddev command is available
-    $ddevAvailable = shell_exec("which ddev 2>/dev/null");
-
-    if (empty(trim($ddevAvailable))) {
-      $output->writeln("<comment>⚠ DDEV command not found, skipping restart</comment>");
-      return;
-    }
-
-    $output->writeln("<info>🔄 Restarting DDEV to apply config changes...</info>");
-
-    // Execute ddev restart
-    $result = shell_exec("ddev restart 2>&1");
-    $exitCode = shell_exec('echo $?');
-
-    if (trim($exitCode) === "0") {
-      $output->writeln("✅ DDEV restarted successfully");
-    } else {
-      $output->writeln("<error>❌ DDEV restart failed:</error>");
-      $output->writeln($result);
-      $output->writeln("<comment>You may need to run 'ddev restart' manually</comment>");
-    }
   }
 }
