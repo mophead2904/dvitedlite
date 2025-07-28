@@ -22,6 +22,10 @@ class ScriptHandler
     $drupalFinder->locateRoot(getcwd());
     $drupalRoot = $drupalFinder->getDrupalRoot();
 
+    // Get the path to this package's files
+    $vendorDir = $event->getComposer()->getConfig()->get("vendor-dir");
+    $packageDir = $vendorDir . "/mophead2904/speedster";
+
     $dirs = ["modules", "profiles", "themes"];
 
     // Required for unit testing
@@ -32,22 +36,29 @@ class ScriptHandler
       }
     }
 
-    // Prepare the settings file for installation
-    if (!$fs->exists($drupalRoot . "/sites/default/settings.php") and $fs->exists($drupalRoot . "/../custom/settings.php")) {
-      $fs->copy($drupalRoot . "/../custom/settings.php", $drupalRoot . "/sites/default/settings.php");
-      $fs->chmod($drupalRoot . "/sites/default/settings.php", 0666);
+    // Copy settings.php from package (if it exists and destination doesn't)
+    $sourceSettings = $packageDir . "/src/custom/settings.php";
+    $destSettings = $drupalRoot . "/sites/default/settings.php";
+    if (!$fs->exists($destSettings) && $fs->exists($sourceSettings)) {
+      $fs->copy($sourceSettings, $destSettings);
+      $fs->chmod($destSettings, 0666);
       $event->getIO()->write("Created a sites/default/settings.php file with chmod 0666");
     }
 
-    // log when this file
-    if (!$fs->exists($drupalRoot . "/sites/default/custom/settings.local.php")) {
-      $fs->copy($drupalRoot . "/../custom/settings.local.php", $drupalRoot . "/sites/default/settings.local.php");
-      //$fs->chmod($drupalRoot . '/sites/default/settings.local.php', 0666);
+    // Copy settings.local.php from package
+    $sourceSettingsLocal = $packageDir . "/src/custom/settings.local.php";
+    $destSettingsLocal = $drupalRoot . "/sites/default/settings.local.php";
+    if (!$fs->exists($destSettingsLocal) && $fs->exists($sourceSettingsLocal)) {
+      $fs->copy($sourceSettingsLocal, $destSettingsLocal);
+      $fs->chmod($destSettingsLocal, 0666);
       $event->getIO()->write("Created a sites/default/settings.local.php file with chmod 0666");
     }
 
-    if (!$fs->exists($drupalRoot . "/sites/default/custom/local.services.yml")) {
-      $fs->copy($drupalRoot . "/../custom/local.services.yml", $drupalRoot . "/sites/local.services.yml");
+    // Copy local.services.yml from package
+    $sourceServices = $packageDir . "/src/custom/local.services.yml";
+    $destServices = $drupalRoot . "/sites/local.services.yml";
+    if (!$fs->exists($destServices) && $fs->exists($sourceServices)) {
+      $fs->copy($sourceServices, $destServices);
       $event->getIO()->write("Created a sites/local.services.yml file");
     }
 
