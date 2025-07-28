@@ -3,12 +3,11 @@
   "description": "Composer script handlers for Drupal projects",
   "type": "composer-plugin",
   "license": "GPL-2.0-or-later",
-  "symfony/filesystem": "^4.0 || ^5.0 || ^6.0 || ^7.0",
   "require": {
     "php": ">=7.4",
     "composer-plugin-api": "^2.0",
     "webmozart/path-util": "^2.3",
-    "symfony/filesystem": "^4.0 || ^5.0 || ^6.0",
+    "symfony/filesystem": "^4.0 || ^5.0 || ^6.0 || ^7.0",
     "webflo/drupal-finder": "^1.0"
   },
   "autoload": {
