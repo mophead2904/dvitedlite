@@ -167,13 +167,19 @@ class InitCommand extends BaseCommand
   {
     // Create src directories
     $srcDir = $themeDir . "/src";
-    $cssMain = $srcDir . "/css/main.css";
-    $cssUtil = $srcDir . "/css/utilities.css";
-    $jsDir = $srcDir . "/js/main.js";
+    $cssMain = $srcDir . "/css/";
+    $jsDir = $srcDir . "/js/";
 
-    $fs->mkdir([$cssMain, $cssUtil, $jsDir]);
-    $output->writeln("✓ Created src/css/ directory");
-    $output->writeln("✓ Created src/js/ directory");
+    $fs->mkdir([$cssMain, $jsDir]);
+
+    // add a main.css and main.js
+    $fs->dumpFile($cssMain . "main.css", "");
+    $fs->dumpFile($cssMain . "utilities.css", "");
+    $fs->dumpFile($jsDir . "main.js", "");
+
+    $output->writeln("✓ Created src/css/main.css");
+    $output->writeln("✓ Created src/css/utilities.css");
+    $output->writeln("✓ Created src/js/main.js");
   }
 
   private function createThemeFiles($fs, $themeDir, $themeName, $themeMachineName, $output)

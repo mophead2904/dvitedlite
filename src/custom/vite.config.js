@@ -55,7 +55,6 @@ function getCSSEntries() {
 }
 
 export default defineConfig({
-
   plugins: [
     // Custom plugin to trigger Drupal cache clear on template changes
     {
@@ -89,7 +88,7 @@ export default defineConfig({
           },
         }),
         postcssGlobalData({
-          files: ["./src/css/utility.css"],
+          files: ["./src/css/utilities.css"],
         }),
         require("postcss-custom-media")(),
         require("postcss-nesting"),
