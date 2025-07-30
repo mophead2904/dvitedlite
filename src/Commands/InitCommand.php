@@ -130,7 +130,7 @@ class InitCommand extends BaseCommand
     }
 
     // Make sure type is set to module
-    $packageJson["type"] = array_merge($packageJson["type"] ?? [], ["module"]);
+    $packageJson["type"] = "module";
 
     // Add/update scripts
     $packageJson["scripts"] = array_merge($packageJson["scripts"] ?? [], [
