@@ -54,7 +54,7 @@ class InitCommand extends BaseCommand
     $this->copyVitePhp($fs, $packageDir, $themeDir, $themeMachineName, $output);
 
     // 3. Update package.json
-    $this->updatePackageJson($fs, $themeDir, $output);
+    $this->updatePackageJson($fs, $themeDir, $themeMachineName, $output);
 
     // 4. Create src structure with basic files
     $this->createSrcStructure($fs, $themeDir, $output);
@@ -120,14 +120,24 @@ class InitCommand extends BaseCommand
     }
   }
 
-  private function updatePackageJson($fs, $themeDir, $output)
+  private function updatePackageJson($fs, $themeDir, $themeMachineName, $output)
   {
     $packageJsonPath = $themeDir . "/package.json";
-    $packageJson = [];
 
-    // Load existing package.json if it exists
+    // Load existing package.json if it exists, otherwise use base structure
     if ($fs->exists($packageJsonPath)) {
       $packageJson = json_decode(file_get_contents($packageJsonPath), true) ?: [];
+    } else {
+      // Base package.json structure when creating new file
+      $packageJson = [
+        "name" => $themeMachineName,
+        "version" => "1.0.0",
+        "description" => "",
+        "scripts" => [],
+        "keywords" => [],
+        "author" => "",
+        "license" => "ISC",
+      ];
     }
 
     // Make sure type is set to module
@@ -141,6 +151,7 @@ class InitCommand extends BaseCommand
 
     // Add devDependencies
     $packageJson["devDependencies"] = array_merge($packageJson["devDependencies"] ?? [], [
+      "postcss" => "^8.5.3",
       "postcss-preset-env" => "^10.1.6",
       "vite" => "^6.2.6",
     ]);
@@ -201,7 +212,7 @@ class InitCommand extends BaseCommand
     }
 
     // Add/update global library (only if it doesn't exist or needs updating)
-    $libraries["global"] = [
+    $libraries["global-vite"] = [
       "vite" => true,
       "css" => [
         "theme" => [
@@ -248,12 +259,12 @@ class InitCommand extends BaseCommand
         "type" => "theme",
         "description" => "A Vite-powered Drupal theme",
         "core_version_requirement" => "^9 || ^10 || ^11",
-        "base theme" => false,
+        "base theme" => "claro",
       ];
     }
 
     // Add or update libraries section
-    $libraries = ["{$themeMachineName}/global", "{$themeMachineName}/hot-module-replacement"];
+    $libraries = ["{$themeMachineName}/global-vite", "{$themeMachineName}/hot-module-replacement"];
 
     $infoYml["libraries"] = array_unique(array_merge($infoYml["libraries"] ?? [], $libraries));
 
