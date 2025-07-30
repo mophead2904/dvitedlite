@@ -5,9 +5,9 @@ use Drupal\Core\Site\Settings;
 /**
  * Implements hook_library_info_alter().
  */
-function speedster_library_info_alter(&$libraries, $extension)
+function THEME_NAME_library_info_alter(&$libraries, $extension)
 {
-  if ($extension !== "speedster") {
+  if ($extension !== "THEME_NAME") {
     return;
   }
 
@@ -137,7 +137,7 @@ function _vite_replace_library(array &$library, string $path, array $options): v
 /**
  * Implements hook_preprocess_html().
  */
-function speedster_preprocess_html(&$variables)
+function THEME_NAME_preprocess_html(&$variables)
 {
   $variables["#attached"]["drupalSettings"]["path"]["themeUrl"] = \Drupal::theme()->getActiveTheme()->getPath();
 }
