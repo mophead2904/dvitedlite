@@ -173,6 +173,9 @@ if (getenv("IS_DDEV_PROJECT") == "true") {
   if (is_readable($ddev_settings)) {
     require $ddev_settings;
   }
+  $settings["vite"] = [
+    "devServerUrl" => $_ENV["DDEV_PRIMARY_URL"] . ":5173",
+  ];
   // Hot module replacement for local development
   $settings["hot_module_replacement"] = true;
 } else {

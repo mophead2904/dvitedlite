@@ -128,35 +128,21 @@ class InitCommand extends BaseCommand
       $packageJson = json_decode(file_get_contents($packageJsonPath), true) ?: [];
     }
 
+    // Make sure type is set to module
+    $packageJson["type"] = array_merge($packageJson["type"] ?? [], ["module"]);
+
     // Add/update scripts
     $packageJson["scripts"] = array_merge($packageJson["scripts"] ?? [], [
-      "dev" => "vite --host 0.0.0.0 --port 12321",
-      "dev:fast" => "vite --host 0.0.0.0 --port 12321 --force",
-      "dev:debug" => "vite --host 0.0.0.0 --port 12321 --debug --force",
+      "dev" => "vite",
       "build" => "vite build --mode production",
-      "preview" => "vite preview",
     ]);
 
     // Add devDependencies
     $packageJson["devDependencies"] = array_merge($packageJson["devDependencies"] ?? [], [
-      "@csstools/postcss-global-data" => "^3.0.0",
-      "autoprefixer" => "^10.4.21",
-      "glob" => "^11.0.3",
       "postcss" => "^8.5.3",
-      "postcss-custom-media" => "^11.0.5",
-      "postcss-import" => "^16.1.0",
-      "postcss-nesting" => "^13.0.1",
       "postcss-preset-env" => "^10.1.6",
-      "util" => "^0.12.5",
       "vite" => "^6.2.6",
-      "vite-plugin-compression" => "^0.5.1",
-    ]);
-
-    // Add dependencies
-    $packageJson["dependencies"] = array_merge($packageJson["dependencies"] ?? [], [
-      "cssnano" => "^7.1.0",
       "tinyglobby" => "^0.2.14",
-      "vite-plugin-live-reload" => "^3.0.4",
     ]);
 
     $fs->dumpFile($packageJsonPath, json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -174,11 +160,11 @@ class InitCommand extends BaseCommand
 
     // add a main.css and main.js
     $fs->dumpFile($cssMain . "main.css", "");
-    $fs->dumpFile($cssMain . "utilities.css", "");
     $fs->dumpFile($jsDir . "main.js", "");
 
+    $fs->dumpFile($jsDir . "main.js", "import '../css/main.css';");
+
     $output->writeln("✓ Created src/css/main.css");
-    $output->writeln("✓ Created src/css/utilities.css");
     $output->writeln("✓ Created src/js/main.js");
   }
 
@@ -192,6 +178,109 @@ class InitCommand extends BaseCommand
 
     $fs->dumpFile($themeDir . "/{$themeMachineName}.theme", $themeFile);
     $output->writeln("✓ Created {$themeMachineName}.theme");
+
+    // Create theme.libraries.yml file
+    $librariesYml = <<<YAML
+    global:
+      vite: true
+      css:
+        theme:
+          src/css/main.css: {} # Changed from main.css to main-base.css
+      js:
+        src/js/main.js: { attributes: { type: "module" } }
+      dependencies:
+        - core/drupal
+        - core/once
+        - core/jquery
+        - core/drupalSettings
+
+    hot-module-replacement:
+      js:
+        https://tester.ddev.site:5173/@vite/client: { type: external, attributes: { type: "module" } }
+      dependencies:
+        - core/drupal
+    YAML;
+
+    // Create or update theme.libraries.yml file
+    $this->createOrUpdateLibrariesYml($fs, $themeDir, $themeMachineName, $output);
+
+    // Create or update theme.info.yml file
+    $this->createOrUpdateThemeInfo($fs, $themeDir, $themeName, $themeMachineName, $output);
+  }
+
+  private function createOrUpdateLibrariesYml($fs, $themeDir, $themeMachineName, $output)
+  {
+    $librariesYmlPath = $themeDir . "/{$themeMachineName}.libraries.yml";
+    $libraries = [];
+
+    // Load existing libraries.yml if it exists
+    if ($fs->exists($librariesYmlPath)) {
+      $content = file_get_contents($librariesYmlPath);
+      $libraries = yaml_parse($content) ?: [];
+      $output->writeln("✓ Loading existing {$themeMachineName}.libraries.yml");
+    }
+
+    // Add/update global library (only if it doesn't exist or needs updating)
+    $libraries["global"] = [
+      "vite" => true,
+      "css" => [
+        "theme" => [
+          "src/css/main.css" => [],
+        ],
+      ],
+      "js" => [
+        "src/js/main.js" => ["attributes" => ["type" => "module"]],
+      ],
+      "dependencies" => ["core/drupal", "core/once", "core/jquery", "core/drupalSettings"],
+    ];
+
+    // Add/update hot-module-replacement library
+    $libraries["hot-module-replacement"] = [
+      "js" => [
+        "https://tester.ddev.site:5173/@vite/client" => [
+          "type" => "external",
+          "attributes" => ["type" => "module"],
+        ],
+      ],
+      "dependencies" => ["core/drupal"],
+    ];
+
+    // Convert to YAML and write
+    $yamlContent = $this->arrayToYaml($libraries);
+    $fs->dumpFile($librariesYmlPath, $yamlContent);
+    $output->writeln("✓ Created/updated {$themeMachineName}.libraries.yml");
+  }
+
+  private function createOrUpdateThemeInfo($fs, $themeDir, $themeName, $themeMachineName, $output)
+  {
+    $infoYmlPath = $themeDir . "/{$themeMachineName}.info.yml";
+    $infoYml = [];
+
+    // Load existing info.yml if it exists
+    if ($fs->exists($infoYmlPath)) {
+      $content = file_get_contents($infoYmlPath);
+      $infoYml = yaml_parse($content) ?: [];
+      $output->writeln("✓ Loading existing {$themeMachineName}.info.yml");
+    } else {
+      // Create basic theme info structure
+      $infoYml = [
+        "name" => $themeName,
+        "type" => "theme",
+        "description" => "A Vite-powered Drupal theme",
+        "core_version_requirement" => "^9 || ^10 || ^11",
+        "base theme" => false,
+      ];
+    }
+
+    // Add or update libraries section
+    $libraries = ["{$themeMachineName}/global", "{$themeMachineName}/hot-module-replacement"];
+
+    $infoYml["libraries"] = array_unique(array_merge($infoYml["libraries"] ?? [], $libraries));
+
+    // Convert array back to YAML and write to file
+    $yamlContent = $this->arrayToYaml($infoYml);
+    $fs->dumpFile($infoYmlPath, $yamlContent);
+    $output->writeln("✓ Created/updated {$themeMachineName}.info.yml");
   }
 
   private function enableSettingsLocal($fs, $drupalRoot, $output)

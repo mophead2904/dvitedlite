@@ -5,9 +5,9 @@ use Drupal\Core\Site\Settings;
 /**
  * Implements hook_library_info_alter().
  */
-function THEME_NAME_library_info_alter(&$libraries, $extension)
+function speedster_library_info_alter(&$libraries, $extension)
 {
-  if ($extension !== "THEME_NAME") {
+  if ($extension !== "speedster") {
     return;
   }
 
@@ -113,72 +113,31 @@ function _vite_replace_library(array &$library, string $path, array $options): v
   unset($library[$path]);
 
   if ($local) {
-    $dir = "http://localhost:12321";
+    $dir = \Drupal::service("settings")->get("vite")["devServerUrl"];
     $options["type"] = "external";
     if (preg_match('/.m?js$/', $path)) {
       $options["crossorigin"] = true;
-    }
-
-    // Handle main.css in local development - convert to individual files
-    if (preg_match('/\.css$/', $path) && str_contains($path, "main.css")) {
-      // Load main-base.css instead of main.css
-      $base_path = str_replace("main.css", "main-base.css", $path);
-      $base_url = $dir . "/" . $base_path;
-      $library[$base_url] = $options;
-
-      // Add all individual CSS files that Vite is serving
-      $individual_css_files = _get_individual_css_files();
-      foreach ($individual_css_files as $css_file) {
-        $css_url = $dir . "/" . $css_file;
-        $library[$css_url] = $options;
-      }
-
-      return;
     }
   } else {
     // Convert .scss files to .css
     $path = preg_replace('/.s[ac]ss$/', ".css", $path);
     // Strip off all but the filename.
-    $path = preg_replace("#^src/#", "", $path);
-    $path = preg_replace('#\.s[ac]ss$#', ".css", $path);
+    if (!$local) {
+      $path = preg_replace("#^src/#", "", $path);
+      $path = preg_replace('#\.s[ac]ss$#', ".css", $path);
+    }
   }
 
-  // Prepend the directory.
+  // Prepend the local development url.
   $path = $dir . "/" . $path;
   // Add in the new altered library.
   $library[$path] = $options;
 }
 
 /**
- * Get list of individual CSS files that Vite serves in development.
- * This should match the files from getIndividualCSSEntries() in vite.config.js
- */
-function _get_individual_css_files(): array
-{
-  $theme_path = \Drupal::theme()->getActiveTheme()->getPath();
-  $css_dir = $theme_path . "/src/css";
-
-  // Files to exclude (already in main-base.css or not individual components)
-  $exclude_files = ["main.css", "main-base.css", "custom-media.css", "variables.css", "base.css", "typography.css", "admin.css"];
-
-  $css_files = [];
-
-  if (is_dir($css_dir)) {
-    $files = scandir($css_dir);
-    foreach ($files as $file) {
-      if (pathinfo($file, PATHINFO_EXTENSION) === "css" && !in_array($file, $exclude_files)) {
-        $css_files[] = "src/css/" . $file;
-      }
-    }
-  }
-
-  return $css_files;
-}
-
-/**
  * Implements hook_preprocess_html().
  */
-function THEME_NAME_preprocess_html(&$variables)
+function speedster_preprocess_html(&$variables)
 {
   $variables["#attached"]["drupalSettings"]["path"]["themeUrl"] = \Drupal::theme()->getActiveTheme()->getPath();
 }
@@ -203,31 +162,43 @@ function _shouldLibraryBeManagedByVite(array $settings): bool
 function _is_vite_dev_server_running(): bool
 {
   static $cache = [];
-  $cache_key = "vite_dev_server_running";
+  $cache_key = "vite_dev_server_running_http";
 
-  // Cache the result for 5 seconds to avoid repeated checks
+  // Cache the result for 5 seconds
   if (isset($cache[$cache_key]) && $cache[$cache_key]["time"] > time() - 5) {
     return $cache[$cache_key]["result"];
   }
 
-  $vite_host = "host.docker.internal";
-  $vite_port = 12321;
-  $dev_server_url = "http://" . $vite_host . ":" . $vite_port;
+  $vite_settings = \Drupal::service("settings")->get("vite");
+  if (!$vite_settings || !isset($vite_settings["devServerUrl"])) {
+    return false;
+  }
 
-  // Faster connection check
-  $connection = @fsockopen($vite_host, $vite_port, $errno, $errstr, 0.5);
+  $dev_server_url = $vite_settings["devServerUrl"];
 
-  if ($connection) {
-    fclose($connection);
-    $result = true;
+  // Try to make a quick HTTP request to the Vite client endpoint
+  $context = stream_context_create([
+    "http" => [
+      "timeout" => 2,
+      "method" => "GET",
+    ],
+  ]);
+
+  $vite_client_url = $dev_server_url . "/@vite/client";
+  $result = @file_get_contents($vite_client_url, false, $context);
+
+  $is_running = $result !== false;
+
+  if ($is_running) {
+    \Drupal::logger("vite")->info("Vite dev server confirmed running at {$dev_server_url}");
   } else {
-    $result = false;
+    \Drupal::logger("vite")->warning("Vite dev server not responding at {$dev_server_url}");
   }
 
   $cache[$cache_key] = [
-    "result" => $result,
+    "result" => $is_running,
     "time" => time(),
   ];
 
-  return $result;
+  return $is_running;
 }
