@@ -1,5 +1,8 @@
 # ILL UPDAT3E THIS to be better sooon! :)
 
+PLUG AND PLAY
+
+![alt text](./zuckky.jpg "zuckky")
 
 -------------------------------
 
