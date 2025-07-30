@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use DrupalFinder\DrupalFinder;
+use Symfony\Component\Yaml\Yaml;
 
 class InitCommand extends BaseCommand
 {
@@ -195,7 +196,7 @@ class InitCommand extends BaseCommand
     // Load existing libraries.yml if it exists
     if ($fs->exists($librariesYmlPath)) {
       $content = file_get_contents($librariesYmlPath);
-      $libraries = yaml_parse($content) ?: [];
+      $libraries = Yaml::parse($content) ?: [];
       $output->writeln("✓ Loading existing {$themeMachineName}.libraries.yml");
     }
 
@@ -238,7 +239,7 @@ class InitCommand extends BaseCommand
     // Load existing info.yml if it exists
     if ($fs->exists($infoYmlPath)) {
       $content = file_get_contents($infoYmlPath);
-      $infoYml = yaml_parse($content) ?: [];
+      $infoYml = Yaml::parse($content) ?: [];
       $output->writeln("✓ Loading existing {$themeMachineName}.info.yml");
     } else {
       // Create basic theme info structure
