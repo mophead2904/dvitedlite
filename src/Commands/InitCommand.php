@@ -226,7 +226,7 @@ class InitCommand extends BaseCommand
     ];
 
     // Convert to YAML and write
-    $yamlContent = $this->arrayToYaml($libraries);
+    $yamlContent = Yaml::dump($libraries);
     $fs->dumpFile($librariesYmlPath, $yamlContent);
     $output->writeln("✓ Created/updated {$themeMachineName}.libraries.yml");
   }
@@ -258,7 +258,7 @@ class InitCommand extends BaseCommand
     $infoYml["libraries"] = array_unique(array_merge($infoYml["libraries"] ?? [], $libraries));
 
     // Convert array back to YAML and write to file
-    $yamlContent = $this->arrayToYaml($infoYml);
+    $yamlContent = Yaml::dump($infoYml);
     $fs->dumpFile($infoYmlPath, $yamlContent);
     $output->writeln("✓ Created/updated {$themeMachineName}.info.yml");
   }
