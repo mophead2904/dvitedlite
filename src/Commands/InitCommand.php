@@ -72,9 +72,9 @@ class InitCommand extends BaseCommand
     $output->writeln("<comment>Next steps:</comment>");
     $output->writeln("1. ddev restart");
     $output->writeln("2. cd {$themeDir}");
-    $output->writeln("3. pnpm install");
-    $output->writeln("4. pnpm build to make initial manifest file");
-    $output->writeln("5. pnpm dev to start development server");
+    $output->writeln("3. ddev npm i");
+    $output->writeln("4. ddev npm run build (to make initial manifest file)");
+    $output->writeln("5. ddev npm run dev (to start development server)");
 
     return 0;
   }
@@ -140,10 +140,8 @@ class InitCommand extends BaseCommand
 
     // Add devDependencies
     $packageJson["devDependencies"] = array_merge($packageJson["devDependencies"] ?? [], [
-      "postcss" => "^8.5.3",
       "postcss-preset-env" => "^10.1.6",
       "vite" => "^6.2.6",
-      "tinyglobby" => "^0.2.14",
     ]);
 
     $fs->dumpFile($packageJsonPath, json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -163,6 +161,7 @@ class InitCommand extends BaseCommand
     $fs->dumpFile($cssMain . "main.css", "");
     $fs->dumpFile($jsDir . "main.js", "");
 
+    $fs->dumpFile($cssMain . "main.css", "html {  background-color: goldenrod;}");
     $fs->dumpFile($jsDir . "main.js", "import '../css/main.css';");
 
     $output->writeln("✓ Created src/css/main.css");
