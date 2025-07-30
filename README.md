@@ -1,64 +1,60 @@
-# Installation
+# ILL UPDAT3E THIS to be better sooon! :)
 
-To get started, run the following commands:
+
+-------------------------------
+
+
+
+### You will need ddev installed on your machine.
+https://ddev.readthedocs.io/en/stable/users/install/ddev-installation/
+
+
+-------------------------------
+
+
+
+### You can run this in an existing project or create a new one with:
+https://ddev.readthedocs.io/en/stable/users/quickstart/#drupal
+
+```mkdir YOUR_PROJECT_NAME && cd YOUR_PROJECT_NAME```
+
+```ddev config --project-type=drupal11 --docroot=web```
+
+```ddev start```
+
+```ddev composer create-project "drupal/recommended-project:^11"```
+
+```ddev composer require drush/drush```
+
+```ddev drush site:install --account-name=admin --account-pass=admin -y```
+
+```ddev launch```
+
+or automatically log in with
+
+```ddev launch $(ddev drush uli)```
+
+
+-------------------------------
+
+
+# Starting in your drupal project root:
 
 ```ddev composer require mophead2904/dvitedlite```
 
-After requiring the package, the intallation process will update a few files in your project.
-- settings.php
-- settings.local.php
-- local.settings.yml
-These updates automatically apply development settings to your project.
-They are used only to register if we are in development mode or not.
+```ddev composer speedster:init "THEME_NAME"```
 
-Next run the following command:
+```ddev restart```
 
-```ddev composer dvitedlite:init "THEME_NAME"```
+```cd web/theme/custom/THEME_NAME```
 
-The dvitedlite:init "THEME_NAME" command is will initialise the setup within the selected themes directory with a default structure and base files.
-The base files include:
-- vite.config.js
-- includes/vite.php
-- [THEME_NAME].theme (will generate if file does not exist, otherwise it will be updated)
+```ddev npm i```
+
+```ddev npm run build```
+
+```ddev npm run dev```
+
+```ddev drush cr```
 
 
-
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/mophead2904/dvitedlite"
-    }
-  ],
-
-
-
-## Usage
-1. cd ./web/themes/custom/[THEME_NAME]
-2. pnpm install
-3. pnpm build to make initial manifest file
-4. pnpm dev to start development server
-
-
-
-The file structure is as follows:
-
-```
-web/themes/custom/[THEME_NAME]
-├── includes
-│   └── vite.php
-├── src
-│   ├── css
-│   ├── js
-│   ├── img
-│   └── ect...
-├── dist
-│   ├── vite
-│   │   └── mainifest.json
-│   ├── css
-│   │   └── ect...
-│   └── js
-│       └── ect...
-├── [THEME_NAME].library.yml
-├── [THEME_NAME].info.yml
-└── [THEME_NAME].theme.yml
-```
+-------------------------------
