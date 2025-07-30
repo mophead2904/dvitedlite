@@ -34,14 +34,14 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface, Capab
 
   public function onPreCmd($event)
   {
-    $event->getIO()->write("🚀 SPEEDSTER: onPreCmd called");
+    $event->getIO()->write("🚀 dvitedlite: onPreCmd called");
     \Composer\Config::disableProcessTimeout();
     ScriptHandler::checkComposerVersion($event);
   }
 
   public function onPostCmd($event)
   {
-    $event->getIO()->write("🚀 SPEEDSTER: onPostCmd called");
+    $event->getIO()->write("🚀 dvitedlite: onPostCmd called");
     ScriptHandler::createRequiredFiles($event);
   }
 }

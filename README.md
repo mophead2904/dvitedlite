@@ -2,7 +2,7 @@
 
 To get started, run the following commands:
 
-```ddev composer require mophead2904/speedster```
+```ddev composer require mophead2904/dvitedlite```
 
 After requiring the package, the intallation process will update a few files in your project.
 - settings.php
@@ -13,9 +13,9 @@ They are used only to register if we are in development mode or not.
 
 Next run the following command:
 
-```ddev composer speedster:init "THEME_NAME"```
+```ddev composer dvitedlite:init "THEME_NAME"```
 
-The speedster:init "THEME_NAME" command is will initialise the setup within the selected themes directory with a default structure and base files.
+The dvitedlite:init "THEME_NAME" command is will initialise the setup within the selected themes directory with a default structure and base files.
 The base files include:
 - vite.config.js
 - includes/vite.php
@@ -26,7 +26,7 @@ The base files include:
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/mophead2904/speedster"
+      "url": "https://github.com/mophead2904/dvitedlite"
     }
   ],
 

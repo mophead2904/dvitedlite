@@ -21,13 +21,13 @@ class ScriptHandler
     $drupalFinder->locateRoot(getcwd());
     $drupalRoot = $drupalFinder->getDrupalRoot();
 
-    $event->getIO()->write("=== SPEEDSTER DEBUG START ===");
+    $event->getIO()->write("=== dvitedlite DEBUG START ===");
     $event->getIO()->write("Current working directory: " . getcwd());
     $event->getIO()->write("Drupal root found at: " . $drupalRoot);
 
     // Get the path to this package's files
     $vendorDir = $event->getComposer()->getConfig()->get("vendor-dir");
-    $packageDir = $vendorDir . "/mophead2904/speedster";
+    $packageDir = $vendorDir . "/mophead2904/dvitedlite";
 
     $event->getIO()->write("Vendor directory: " . $vendorDir);
     $event->getIO()->write("Package directory: " . $packageDir);
@@ -137,7 +137,7 @@ class ScriptHandler
       $event->getIO()->write("✓ Files directory already exists");
     }
 
-    $event->getIO()->write("=== SPEEDSTER DEBUG END ===");
+    $event->getIO()->write("=== dvitedlite DEBUG END ===");
   }
 
   /**

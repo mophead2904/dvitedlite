@@ -14,7 +14,7 @@ class InitCommand extends BaseCommand
 {
   protected function configure()
   {
-    $this->setName("speedster:init")->setDescription("Initialize theme with Vite development setup")->addArgument("theme_name", InputArgument::REQUIRED, "The name of the theme to initialize")->setHelp("This command sets up a Drupal theme with Vite for modern frontend development");
+    $this->setName("dvitedlite:init")->setDescription("Initialize theme with Vite development setup")->addArgument("theme_name", InputArgument::REQUIRED, "The name of the theme to initialize")->setHelp("This command sets up a Drupal theme with Vite for modern frontend development");
   }
 
   protected function execute(InputInterface $input, OutputInterface $output)
@@ -31,7 +31,7 @@ class InitCommand extends BaseCommand
     // Get package directory
     $composer = $this->getComposer();
     $vendorDir = $composer->getConfig()->get("vendor-dir");
-    $packageDir = $vendorDir . "/mophead2904/speedster";
+    $packageDir = $vendorDir . "/mophead2904/dvitedlite";
 
     $output->writeln("<info>🚀 Initializing Vite theme: {$themeName}</info>");
     $output->writeln("Drupal root: {$drupalRoot}");
