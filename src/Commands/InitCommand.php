@@ -59,7 +59,7 @@ class InitCommand extends BaseCommand
     $this->createSrcStructure($fs, $themeDir, $output);
 
     // 5. Create basic theme files
-    $this->createThemeFiles($fs, $themeDir, $themeName, $themeMachineName, $output);
+    $this->createThemeFiles($fs, $themeDir, $themeName, $themeMachineName, $drupalRoot, $output);
 
     // 6. Enable settings.local.php in settings.php
     $this->enableSettingsLocal($fs, $drupalRoot, $output);
@@ -168,7 +168,7 @@ class InitCommand extends BaseCommand
     $output->writeln("✓ Created src/js/main.js");
   }
 
-  private function createThemeFiles($fs, $themeDir, $themeName, $themeMachineName, $output)
+  private function createThemeFiles($fs, $themeDir, $themeName, $themeMachineName, $drupalRoot, $output)
   {
     // Create .theme file with Vite integration
     $themeFile = <<<PHP
@@ -179,39 +179,18 @@ class InitCommand extends BaseCommand
     $fs->dumpFile($themeDir . "/{$themeMachineName}.theme", $themeFile);
     $output->writeln("✓ Created {$themeMachineName}.theme");
 
-    // Create theme.libraries.yml file
-    $librariesYml = <<<YAML
-    global:
-      vite: true
-      css:
-        theme:
-          src/css/main.css: {} # Changed from main.css to main-base.css
-      js:
-        src/js/main.js: { attributes: { type: "module" } }
-      dependencies:
-        - core/drupal
-        - core/once
-        - core/jquery
-        - core/drupalSettings
-
-    hot-module-replacement:
-      js:
-        https://tester.ddev.site:5173/@vite/client: { type: external, attributes: { type: "module" } }
-      dependencies:
-        - core/drupal
-    YAML;
-
     // Create or update theme.libraries.yml file
-    $this->createOrUpdateLibrariesYml($fs, $themeDir, $themeMachineName, $output);
+    $this->createOrUpdateLibrariesYml($fs, $themeDir, $themeMachineName, $drupalRoot, $output);
 
     // Create or update theme.info.yml file
     $this->createOrUpdateThemeInfo($fs, $themeDir, $themeName, $themeMachineName, $output);
   }
 
-  private function createOrUpdateLibrariesYml($fs, $themeDir, $themeMachineName, $output)
+  private function createOrUpdateLibrariesYml($fs, $themeDir, $themeMachineName, $drupalRoot, $output)
   {
     $librariesYmlPath = $themeDir . "/{$themeMachineName}.libraries.yml";
     $libraries = [];
+    $projectName = $this->getDdevProjectName($drupalRoot);
 
     // Load existing libraries.yml if it exists
     if ($fs->exists($librariesYmlPath)) {
@@ -234,10 +213,10 @@ class InitCommand extends BaseCommand
       "dependencies" => ["core/drupal", "core/once", "core/jquery", "core/drupalSettings"],
     ];
 
-    // Add/update hot-module-replacement library
+    // Add/update hot-module-replacement library with dynamic project name
     $libraries["hot-module-replacement"] = [
       "js" => [
-        "https://tester.ddev.site:5173/@vite/client" => [
+        "https://{$projectName}.ddev.site:5173/@vite/client" => [
           "type" => "external",
           "attributes" => ["type" => "module"],
         ],
@@ -331,31 +310,79 @@ class InitCommand extends BaseCommand
     }
 
     $content = file_get_contents($ddevConfigPath);
+    $modified = false;
 
-    // Check if disable_settings_management is already set to true
+    // Handle disable_settings_management
     if (preg_match('/^disable_settings_management:\s*true\s*$/m', $content)) {
       $output->writeln("✓ disable_settings_management already set to true in .ddev/config.yaml");
-      return;
-    }
-
-    // Check if disable_settings_management exists but is set to false
-    if (preg_match('/^disable_settings_management:\s*false\s*$/m', $content)) {
+    } elseif (preg_match('/^disable_settings_management:\s*false\s*$/m', $content)) {
       $content = preg_replace('/^disable_settings_management:\s*false\s*$/m', "disable_settings_management: true", $content);
-      $fs->dumpFile($ddevConfigPath, $content);
       $output->writeln("✓ Updated disable_settings_management to true in .ddev/config.yaml");
-      return;
-    }
-
-    // If disable_settings_management doesn't exist, add it
-    // Try to add it after the name field for better organization
-    if (preg_match('/^name:\s*.*$/m', $content)) {
-      $content = preg_replace('/^(name:\s*.*\n)/m', '$1disable_settings_management: true' . "\n", $content);
+      $modified = true;
     } else {
-      // If no name field found, add at the beginning
-      $content = "disable_settings_management: true\n" . $content;
+      // If disable_settings_management doesn't exist, add it
+      if (preg_match('/^name:\s*.*$/m', $content)) {
+        $content = preg_replace('/^(name:\s*.*\n)/m', '$1disable_settings_management: true' . "\n", $content);
+      } else {
+        $content = "disable_settings_management: true\n" . $content;
+      }
+      $output->writeln("✓ Added disable_settings_management: true to .ddev/config.yaml");
+      $modified = true;
     }
 
-    $fs->dumpFile($ddevConfigPath, $content);
-    $output->writeln("✓ Added disable_settings_management: true to .ddev/config.yaml");
+    // Handle web_extra_exposed_ports for Vite
+    $vitePortConfig = 'web_extra_exposed_ports:
+    - name: vite
+      container_port: 5173
+      http_port: 5172
+      https_port: 5173';
+
+    if (preg_match('/^web_extra_exposed_ports:\s*$/m', $content)) {
+      // web_extra_exposed_ports section exists, check if vite is already configured
+      if (preg_match('/^\s*-\s*name:\s*vite\s*$/m', $content)) {
+        $output->writeln("✓ Vite port configuration already exists in .ddev/config.yaml");
+      } else {
+        // Add vite configuration to existing web_extra_exposed_ports
+        $viteEntry = '  - name: vite
+      container_port: 5173
+      http_port: 5172
+      https_port: 5173';
+
+        $content = preg_replace('/^(web_extra_exposed_ports:\s*\n)/m', '$1' . $viteEntry . "\n", $content);
+        $output->writeln("✓ Added Vite port configuration to existing web_extra_exposed_ports in .ddev/config.yaml");
+        $modified = true;
+      }
+    } else {
+      // web_extra_exposed_ports doesn't exist, add the entire section
+      $content .= "\n" . $vitePortConfig . "\n";
+      $output->writeln("✓ Added web_extra_exposed_ports with Vite configuration to .ddev/config.yaml");
+      $modified = true;
+    }
+
+    // Write the file only if it was modified
+    if ($modified) {
+      $fs->dumpFile($ddevConfigPath, $content);
+    }
+  }
+
+  private function getDdevProjectName($drupalRoot)
+  {
+    $projectRoot = dirname($drupalRoot);
+    $ddevConfigPath = $projectRoot . "/.ddev/config.yaml";
+
+    if (!file_exists($ddevConfigPath)) {
+      // Fallback to directory name if no DDEV config found
+      return basename($projectRoot);
+    }
+
+    $content = file_get_contents($ddevConfigPath);
+
+    // Extract project name from DDEV config
+    if (preg_match('/^name:\s*([^\s]+)\s*$/m', $content, $matches)) {
+      return trim($matches[1]);
+    }
+
+    // Fallback to directory name if name not found in config
+    return basename($projectRoot);
   }
 }
