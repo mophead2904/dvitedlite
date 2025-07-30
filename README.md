@@ -43,21 +43,31 @@ or automatically log in with
 
 # Starting in your drupal project root:
 
+## Install dvitedlite
 ```ddev composer require mophead2904/dvitedlite```
 
-```ddev composer speedster:init "THEME_NAME"```
+## Initialize dvitedlite in your specified theme directory
+```ddev composer dvitedlite:init "THEME_NAME"```
 
+## Restart DDEV to apply configuration changes
 ```ddev restart```
 
-```cd web/theme/custom/THEME_NAME```
-
-```ddev npm i```
-
-```ddev npm run build```
-
-```ddev npm run dev```
-
+## Clear Drupal cache
 ```ddev drush cr```
 
+## Navigate to theme directory
+```cd web/themes/custom/your_theme_name```
+
+## Install dependencies
+```ddev npm install```
+
+## Build assets (first time)
+```ddev npm run build```
+
+## Start development server with HMR
+```ddev npm run dev```
 
 -------------------------------
+
+
+## feel free to remove the package once you have initialized dvitedlite
