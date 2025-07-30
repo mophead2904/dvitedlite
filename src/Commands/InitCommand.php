@@ -71,10 +71,11 @@ class InitCommand extends BaseCommand
     $output->writeln("<success>✅ Vite theme '{$themeName}' initialized successfully!</success>");
     $output->writeln("<comment>Next steps:</comment>");
     $output->writeln("1. ddev restart");
-    $output->writeln("2. cd {$themeDir}");
-    $output->writeln("3. ddev npm i");
-    $output->writeln("4. ddev npm run build (to make initial manifest file)");
-    $output->writeln("5. ddev npm run dev (to start development server)");
+    $output->writeln("2. ddev drush cr");
+    $output->writeln("3. cd {$themeDir}");
+    $output->writeln("4. ddev npm i");
+    $output->writeln("5. ddev npm run build (to make initial manifest file)");
+    $output->writeln("6. ddev npm run dev (to start development server)");
 
     return 0;
   }
