@@ -12,6 +12,19 @@ if (!process.env.DDEV_PRIMARY_URL) {
 
 export default defineConfig(({ mode }) => ({
   plugins: [
+    {
+      name: "drupal-template-watcher",
+      handleHotUpdate({ file, server }) {
+        // Only trigger page reload for template files, not CSS/JS
+        if (file.match(/\.(php|inc|theme|twig)$/)) {
+          server.ws.send({
+            type: "full-reload",
+          })
+        }
+        // Let Vite handle CSS/JS with HMR
+        return undefined
+      },
+    },
     postcssPresetEnv({
       stage: 3,
       features: {
